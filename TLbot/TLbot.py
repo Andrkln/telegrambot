@@ -8,6 +8,7 @@ import schedule
 
 reminders = {}
 spendings = {}
+shedulte_dict = {}
 
 bot = telebot.TeleBot("5180025628:AAHb1YPzLqGWuPyYCFpTCoRIpnefDz43wGo")
 
@@ -125,6 +126,36 @@ def schedule_or_reminder_callback(c):
                 bot.send_message(c.message.chat.id, text="You've created your first note ")
 
 
+@bot.callback_query_handler(func=lambda c: c.data in ['monday', 'tuesday','wednesday','trusday','friday','saturday', 'sunday', 'every_day', 'weekend', 'working_days'])
+def spends(c):
+    if c.data == 'monday':
+        bot.send_message(c.message.chat.id, text='choose time and task in format: 10:20 have a breakfast')
+        @bot.message_handler()
+        def make_manday_task(message):
+            rmd = message.text
+            shedulte_dict[message.from_user.id] = rmd
+            rmd = rmd.split(" ")
+            time = rmd[0]
+            event = ' '.join(rmd[1::])
+            schedule.every().monday.at(time).do()
+    if c.data == 'tuesday':
+        pass
+    if c.data == 'wednesday':
+        pass
+    if c.data == 'trusday':
+        pass
+    if c.data == 'friday':
+        pass
+    if c.data == 'saturday':
+        pass
+    if c.data == 'sunday':
+        pass
+    if c.data == 'every_day':
+        pass
+    if c.data == 'weekend':
+        pass
+    if c.data == 'working_days':
+        pass
 
 def get_keyboard():
     keyboard = telebot.types.InlineKeyboardMarkup()
