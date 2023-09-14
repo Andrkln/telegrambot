@@ -89,8 +89,7 @@ def handle_user_message(message):
             cweather = city['weather'][0]['main']
             rweather = f'weaher in city {rmd}: {cweather} temperature {temp}, feels like {feels_like}'
             del user_statuses[message.chat.id]
-            msg = bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
-            bot.register_next_step_handler(msg, start)
+            bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
     elif user_status == 'awaiting_spendings':
         rmd = message.text
         rmd = rmd.split(" ")
@@ -109,15 +108,13 @@ def handle_user_message(message):
             tx = tx.replace(']', '')
             tx = tx.replace("'", '')
             del user_statuses[message.chat.id]
-            msg = bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
-            bot.register_next_step_handler(msg, start)
+            bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
         else:
             spends = []
             spends = spends.append((summ, event))
             spendings[message.from_user.id] = spends
             del user_statuses[message.chat.id]
-            msg = bot.send_message(message.chat.id, text='You did not spend any money before, that is your first note', reply_markup=get_keyboard())
-            bot.register_next_step_handler(msg, start)
+            bot.send_message(message.chat.id, text='You did not spend any money before, that is your first note', reply_markup=get_keyboard())
     if user_status == 'awaiting_gpt_question':
         print(user_statuses[message.chat.id])
         response = openai.Completion.create(
@@ -131,17 +128,16 @@ def handle_user_message(message):
             stop=['"""'],
         )
         del user_statuses[message.chat.id]
-        msg = bot.send_message(message.chat.id, f'{response["choices"][0]["text"]}', parse_mode="None", reply_markup=get_keyboard())
-        bot.register_next_step_handler(msg, start)
+        bot.send_message(message.chat.id, f'{response["choices"][0]["text"]}', parse_mode="None", reply_markup=get_keyboard())
     elif user_status == 'awaiting_paint_description':
         print(user_statuses[message.chat.id])
         dalle = DallE()
         image = dalle.to_image(message.text)
+        user_statuses[message.chat.id] = None
         bot.send_message(message.chat.id, text=f'generating')
-        del user_statuses[message.chat.id]
-        print(user_statuses[message.chat.id])
-        msg = bot.send_photo(message.chat.id, image, reply_markup=get_keyboard())
-        bot.register_next_step_handler(msg, start)
+        bot.send_photo(message.chat.id, image, reply_markup=get_keyboard())
+        
+        
 
 
 
