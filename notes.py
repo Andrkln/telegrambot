@@ -6,9 +6,10 @@
  
 # import required modules
 import requests, json
+from decouple import config
  
 # Enter your API key here
-api_key = "982f6a34a97a2023cb183fafabb2407e"
+api_key = config('weather_api')
  
 # base_url variable to store url
 base_url = "http://api.openweathermap.org/data/2.5/weather?"
@@ -61,7 +62,7 @@ if x["cod"] != "404":
     weather_description = z[0]["description"]
  
     # print following values
-    print(" Temperature (in kelvin unit) = " +
+    return(" Temperature (in kelvin unit) = " +
                     str(current_temperature) +
           "\n atmospheric pressure (in hPa unit) = " +
                     str(current_pressure) +
@@ -71,4 +72,4 @@ if x["cod"] != "404":
                     str(weather_description))
  
 else:
-    print(" City Not Found ")
+    return(" City Not Found ")

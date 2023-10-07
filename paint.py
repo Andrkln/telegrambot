@@ -3,13 +3,12 @@ import os
 import io
 import warnings
 from PIL import Image
-from dotenv import load_dotenv
+from decouple import config
 
 class DallE:
     def to_image(self, prompt):
-        load_dotenv()
 
-        openai.api_key = os.getenv("CHAT_GPT3_API_KEY")
+        openai.api_key = config("OPENAI_API_KEY")
         try:
             response = openai.Image.create(
                 prompt=prompt,
