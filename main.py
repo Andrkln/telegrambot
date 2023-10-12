@@ -47,7 +47,7 @@ def options(c):
         user_statuses[c.message.chat.id] = 'awaiting_weather_city'
         bot.send_message(c.message.chat.id, text="Give me name of a city")
     elif c.data == 'spendings':
-        bot.send_message(c.message.chat.id, text="Напишите что-нибудь, если хотите создать или попонить список расходов в вормате: 8000 футболка гучи")
+        bot.send_message(c.message.chat.id, text="write something to to put in spends in format: category price object. \n example: cloth 20 shirts for home")
         user_statuses[c.message.chat.id] = 'awaiting_spendings'
     elif c.data == 'remind':
         bot.send_message(c.message.chat.id, text="What do you want")
@@ -77,30 +77,34 @@ def handle_user_message(message):
             bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
     elif user_status == 'awaiting_spendings':
         try:
-            rmd = message.text
-            rmd = rmd.split(" ")
-            summ = int(rmd[0])
-            event = ' '.join(rmd[1::])
-            if message.from_user.id in spendings.keys():
-                p = spendings[message.from_user.id]
-                p.append((summ, event, now()))
-                sm = 0
-                for i in spendings[message.from_user.id]:
-                    sm += i[0]
-                formatted_spendings = [(amount, desc, format_datetime(spend_date)) for amount, desc, spend_date in spendings[message.from_user.id]]
-                tx = f'you spent {sm}, your spendings: {formatted_spendings}'
-                tx = tx.replace('[', '')
-                tx = tx.replace(']', '')
-                tx = tx.replace("'", '')
-                del user_statuses[message.chat.id]
-                bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
+            user_categories = spendings.get(message.from_user.id, {})
+            if user_categories:
+                markup = types.InlineKeyboardMarkup()
+                for category in user_categories.keys():
+                    utton = types.InlineKeyboardButton(text=category, callback_data=f"category_{category}")
+                    markup.add(button)
+                bot.send_message(message.chat.id, text='Select a category or enter a new one:',  reply_markup=markup)
             else:
-                spendings[message.from_user.id] = [(summ, event, now())]
-                del user_statuses[message.chat.id]
-                tx = 'You did not spend any money before, that is your first note'
-                if user_id not in scheduled_reports or not scheduled_reports[user_id]:
-                    scheduled_reports[user_id] = schedule.every(30).days.at("12:00").do(send_report_and_clear_spendings, message.from_user.id)
-                bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
+                bot.send_message(message.chat.id, text='WRITE IN FORMAT: category sum event')
+            process_spending(message=message)
+            if user_id not in scheduled_reports or not scheduled_reports[user_id]:
+                scheduled_reports[user_id] = schedule.every(30).days.at("12:00").do(send_report_and_clear_spendings, message.from_user.id)
+            tx = display_spending_summary(message=message)
+            del user_statuses[message.chat.id]
+            bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
+        except:
+            tx = 'Invalid data'
+            bot.send_message(message.chat.id, text=tx)
+    elif user_status.startswith("selected_"):
+        try:
+            category = user_status.split("_")[1]
+            rmd = message.text.split()
+            summ = int(rmd[0])
+            event = ' '.join(rmd[1:])
+            spendings[message.from_user.id][category].append((summ, event, now()))
+            msg = display_spending_summary(message)
+            del user_statuses[message.chat.id]
+            bot.send_message(message.chat.id, text=msg, reply_markup=get_keyboard())
         except:
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
@@ -129,19 +133,65 @@ def handle_user_message(message):
     elif user_status == 'make reminder':
         ab = message
         set_reminder(ab, get_keyboard=get_keyboard)
+        
+
+def process_spending(message):
+    rmd = message.text.split()
+    summ = int(rmd[1])
+    category = str(rmd[0]).lower()
+    event = ' '.join(rmd[2:])
+    if message.from_user.id not in spendings:
+        spendings[message.from_user.id] = {}
+    if category not in spendings[message.from_user.id]:
+        spendings[message.from_user.id][category] = []
+    spendings[message.from_user.id][category].append((summ, event, now()))
+
+
+def display_spending_summary(message):
+    sm = sum(amount for cat_spendings in spendings[message.from_user.id].values() for amount, _, _ in cat_spendings)
+    formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
+                                    for cat_spendings in spendings[message.from_user.id].values() 
+                                    for amount, desc, spend_date in cat_spendings)
+    tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
+    return tx
 
 def send_report_and_clear_spendings(user_id):
     if user_id in spendings:
-        sm = sum(i[0] for i in spendings[user_id])
-        formatted_spendings = [(amount, desc, format_datetime(spend_date)) for amount, desc, spend_date in spendings[user_id]]
-        tx = f'you spent {sm}, your spendings: {formatted_spendings}'
-        tx = tx.replace('[', '')
-        tx = tx.replace(']', '')
-        tx = tx.replace("'", '')
+        sm = sum(amount for cat_spendings in spendings[user_id].values() for amount, _, _ in cat_spendings)
+
+        formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
+                                        for cat_spendings in spendings[user_id].values() 
+                                        for amount, desc, spend_date in cat_spendings)
+
+        tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
+        tx = tx.replace('[', '').replace(']', '').replace("'", '')
         txm = 'During this month ' + tx
+
         bot.send_message(user_id, text=txm, reply_markup=get_keyboard())
         del spendings[user_id]
 
+
+
+def process_spending(message):
+    rmd = message.text.split()
+    summ = int(rmd[1])
+    category = rmd[0]
+    event = ' '.join(rmd[2:])
+    if message.from_user.id not in spendings:
+        spendings[message.from_user.id] = {}
+    if category not in spendings[message.from_user.id]:
+        spendings[message.from_user.id][category] = []
+    spendings[message.from_user.id][category].append((summ, event, now()))
+    display_spending_summary(message)
+
+
+def display_spending_summary(message):
+    sm = sum(amount for cat_spendings in spendings[message.from_user.id].values() for amount, _, _ in cat_spendings)
+    formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
+                                    for cat_spendings in spendings[message.from_user.id].values() 
+                                    for amount, desc, spend_date in cat_spendings)
+    tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
+    bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
 
 
 @bot.callback_query_handler(func=lambda c: c.data in ['Schedule', 'Reminder'])
@@ -188,6 +238,13 @@ def show_tasks(task, id):
         button = telebot.types.InlineKeyboardButton(button_text, callback_data=callback_data)
         keyboard.add(button)
     return keyboard
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("category_"))
+def handle_category_selection(call):
+    selected_category = call.data.split("_")[1]
+    user_statuses[call.message.chat.id] = f"selected_{selected_category}"
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"Enter amount and description for {selected_category}:")
 
 
 def show_reminders(reminder_dict, user_id):
