@@ -1,6 +1,5 @@
 import telebot
 from telebot import types
-import datetime as dt
 from datetime import datetime
 from weather import get_weather
 import schedule
@@ -11,7 +10,7 @@ import openai
 from paint import DallE
 from reminder import reminders, set_reminder, reminder_checker
 from tasks import jobs_dict, make_task, send_task, now
-from bot import bot
+from bot import bot, format_datetime
 from keyboards import R_or_S, get_keyboard
 from spendings import process_spending, display_spending_summary, send_report_and_clear_spendings, spendings
 
@@ -22,9 +21,6 @@ scheduled_reports = {}
 
 
 openai.api_key = config("OPENAI_API_KEY")
-
-def format_datetime(dt):
-    return dt.strftime('%d.%m %H:%M')
 
 def parse_datetime(user_input):
     for fmt in ['%d.%m.%Y %H:%M', '%d.%m.%y %H:%M']:
@@ -138,15 +134,6 @@ def handle_user_message(message):
     elif user_status == 'make reminder':
         ab = message
         set_reminder(ab, get_keyboard=get_keyboard)
-
-
-def display_spending_summary(message):
-    sm = sum(amount for cat_spendings in spendings[message.from_user.id].values() for amount, _, _ in cat_spendings)
-    formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
-                                    for cat_spendings in spendings[message.from_user.id].values() 
-                                    for amount, desc, spend_date in cat_spendings)
-    tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
-    bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
 
 
 @bot.callback_query_handler(func=lambda c: c.data in ['Schedule', 'Reminder'])

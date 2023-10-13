@@ -1,5 +1,8 @@
 from tasks import now
+from bot import format_datetime
+
 spendings = {}
+
 
 
 def process_spending(message):

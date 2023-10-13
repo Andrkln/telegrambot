@@ -12,7 +12,7 @@ def now():
     current_time = dt.datetime.strptime(current_time, '%d.%m.%Y %H:%M')
     return current_time
 
-def send_task(bot, chat_id, event):
+def send_task(chat_id, event):
     bot.send_message(chat_id, text=event)
 
 def make_task(message):
@@ -31,6 +31,7 @@ def make_task(message):
         schedule_funcs = [schedule_funcs]
 
     for schedule_func in schedule_funcs:
+        time += ':00'
         job = schedule_func.at(time).do(send_task, message.chat.id, event)
         jobs_dict[message.from_user.id].append((job, event, day))
     bot.send_message(message.chat.id, text="The task has been added.", reply_markup=get_keyboard())
@@ -44,7 +45,7 @@ schedule_dict = {
     'friday':schedule.every().friday,
     'saturday':schedule.every().saturday,
     'sunday': schedule.every().sunday,
-    'every_day':schedule.every().day,
-    'working_days': [schedule.every().monday, schedule.every().tuesday, schedule.every().wednesday, schedule.every().thursday, schedule.every().friday],
+    'every day':schedule.every().day,
+    'working days': [schedule.every().monday, schedule.every().tuesday, schedule.every().wednesday, schedule.every().thursday, schedule.every().friday],
     'weekend':[schedule.every().saturday, schedule.every().sunday]
 }
