@@ -40,7 +40,7 @@ schedule_dict = {
     'monday': schedule.every().monday,
     'tuesday': schedule.every().tuesday,
     'wednesday':schedule.every().wednesday,
-    'trusday': schedule.every().thursday,
+    'thursday': schedule.every().thursday,
     'friday':schedule.every().friday,
     'saturday':schedule.every().saturday,
     'sunday': schedule.every().sunday,

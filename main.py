@@ -13,8 +13,9 @@ from reminder import reminders, set_reminder, reminder_checker
 from tasks import jobs_dict, make_task, send_task, now
 from bot import bot
 from keyboards import R_or_S, get_keyboard
+from spendings import process_spending, display_spending_summary, send_report_and_clear_spendings, spendings
 
-spendings = {}
+
 user_statuses = {}
 scheduled_reports = {}
 
@@ -78,6 +79,7 @@ def handle_user_message(message):
     elif user_status == 'awaiting_spendings':
         try:
             user_categories = spendings.get(message.from_user.id, {})
+            user_id = message.from_user.id
             if user_categories:
                 markup = types.InlineKeyboardMarkup()
                 for category in user_categories.keys():
@@ -92,7 +94,10 @@ def handle_user_message(message):
             tx = display_spending_summary(message=message)
             del user_statuses[message.chat.id]
             bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
-        except:
+        except Exception as e:
+            print(f"Error: in spendings {e}")
+            tx = 'Invalid data'
+            bot.send_message(message.chat.id, text=tx)
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
     elif user_status.startswith("selected_"):
@@ -133,56 +138,6 @@ def handle_user_message(message):
     elif user_status == 'make reminder':
         ab = message
         set_reminder(ab, get_keyboard=get_keyboard)
-        
-
-def process_spending(message):
-    rmd = message.text.split()
-    summ = int(rmd[1])
-    category = str(rmd[0]).lower()
-    event = ' '.join(rmd[2:])
-    if message.from_user.id not in spendings:
-        spendings[message.from_user.id] = {}
-    if category not in spendings[message.from_user.id]:
-        spendings[message.from_user.id][category] = []
-    spendings[message.from_user.id][category].append((summ, event, now()))
-
-
-def display_spending_summary(message):
-    sm = sum(amount for cat_spendings in spendings[message.from_user.id].values() for amount, _, _ in cat_spendings)
-    formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
-                                    for cat_spendings in spendings[message.from_user.id].values() 
-                                    for amount, desc, spend_date in cat_spendings)
-    tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
-    return tx
-
-def send_report_and_clear_spendings(user_id):
-    if user_id in spendings:
-        sm = sum(amount for cat_spendings in spendings[user_id].values() for amount, _, _ in cat_spendings)
-
-        formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
-                                        for cat_spendings in spendings[user_id].values() 
-                                        for amount, desc, spend_date in cat_spendings)
-
-        tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
-        tx = tx.replace('[', '').replace(']', '').replace("'", '')
-        txm = 'During this month ' + tx
-
-        bot.send_message(user_id, text=txm, reply_markup=get_keyboard())
-        del spendings[user_id]
-
-
-
-def process_spending(message):
-    rmd = message.text.split()
-    summ = int(rmd[1])
-    category = rmd[0]
-    event = ' '.join(rmd[2:])
-    if message.from_user.id not in spendings:
-        spendings[message.from_user.id] = {}
-    if category not in spendings[message.from_user.id]:
-        spendings[message.from_user.id][category] = []
-    spendings[message.from_user.id][category].append((summ, event, now()))
-    display_spending_summary(message)
 
 
 def display_spending_summary(message):
@@ -281,6 +236,5 @@ try:
     t2.start()
     reminder_checker()
     bot.polling(none_stop=True, interval=0, timeout=20)
-except Exception as e:
-    time.sleep(5)
-    print(f"Error: {e}")
+except Exception as er:
+    print(f"Error in end: {er}")
