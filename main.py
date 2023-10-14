@@ -79,7 +79,7 @@ def handle_user_message(message):
             if user_categories:
                 markup = types.InlineKeyboardMarkup()
                 for category in user_categories.keys():
-                    utton = types.InlineKeyboardButton(text=category, callback_data=f"category_{category}")
+                    button = types.InlineKeyboardButton(text=category, callback_data=f"category_{category}")
                     markup.add(button)
                 bot.send_message(message.chat.id, text='Select a category or enter a new one:',  reply_markup=markup)
             else:
@@ -92,7 +92,6 @@ def handle_user_message(message):
             bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
         except Exception as e:
             print(f"Error: in spendings {e}")
-            bot.send_message(message.chat.id, text=tx)
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
     elif user_status.startswith("selected_"):
