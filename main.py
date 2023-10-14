@@ -92,7 +92,6 @@ def handle_user_message(message):
             bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
         except Exception as e:
             print(f"Error: in spendings {e}")
-            tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
