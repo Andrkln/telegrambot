@@ -216,9 +216,9 @@ def run_schedule():
 try:
     t = threading.Thread(target=run_schedule)
     t2 = threading.Thread(target=run_reminder_checker)
+    t3 = threading.Thread(target= bot.polling)
     t.start()
     t2.start()
-    reminder_checker()
-    bot.polling()
+    t3.start()
 except Exception as er:
     print(f"Error in end: {er}")
