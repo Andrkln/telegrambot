@@ -32,9 +32,12 @@ def parse_datetime(user_input):
     
 @bot.message_handler(commands=['start', 'help',])
 def start(message):
+    print('111')
     if message.from_user.id == int(config('ME')):
+        print('1111')
         bot.send_message(message.chat.id, f'How are you doing {message.from_user.first_name}?',reply_markup=get_keyboard())
     else:
+        print('12')
         bot.send_message(message.chat.id, 'this is a private bot, not for you')
 
 
