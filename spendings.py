@@ -18,12 +18,20 @@ def process_spending(message):
 
 
 def display_spending_summary(message):
-    sm = sum(amount for cat_spendings in spendings[message.from_user.id].values() for amount, _, _ in cat_spendings)
-    formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
-                                    for cat_spendings in spendings[message.from_user.id].values() 
-                                    for amount, desc, spend_date in cat_spendings)
-    tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
+    user_spendings = spendings.get(message.from_user.id, {})
+    
+    category_summaries = []
+    for category, cat_spendings in user_spendings.items():
+        formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}\n" 
+                                        for amount, desc, spend_date in cat_spendings)
+        category_summaries.append(f"{category}: {formatted_spendings}")
+    
+    sm = sum(amount for cat_spendings in user_spendings.values() for amount, _, _ in cat_spendings)
+    
+    tx = f'You spent {sm}. Your spendings:\n' + '\n'.join(category_summaries)
+    
     return tx
+
 
 def send_report_and_clear_spendings(user_id):
     if user_id in spendings:

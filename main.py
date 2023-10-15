@@ -44,7 +44,7 @@ def options(c):
         user_statuses[c.message.chat.id] = 'awaiting_weather_city'
         bot.send_message(c.message.chat.id, text="Give me name of a city")
     elif c.data == 'spendings':
-        user_categories = spendings.get(c.message.from_user.id, {})
+        user_categories = spendings.get(c.from_user.id, {})
         if user_categories:
             markup = types.InlineKeyboardMarkup()
             for category in user_categories.keys():
@@ -54,7 +54,6 @@ def options(c):
             user_statuses[c.message.chat.id] = 'awaiting_spendings'
         else:
             bot.send_message(c.message.chat.id, text="write something to to put in spends in format: category price object. \n example: cloth 20 shirts for home")
-            print('1')
             user_statuses[c.message.chat.id] = 'awaiting_spendings'
     elif c.data == 'remind':
         bot.send_message(c.message.chat.id, text="What do you want")
@@ -83,21 +82,18 @@ def handle_user_message(message):
             del user_statuses[message.chat.id]
             bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
     elif user_status == 'awaiting_spendings':
-        print('2')
         try:
             user_id = message.from_user.id
-            print('3')
             process_spending(message=message)
-            print('4')
             if user_id not in scheduled_reports or not scheduled_reports[user_id]:
-                print('5')
                 scheduled_reports[user_id] = schedule.every(30).days.at("12:00").do(send_report_and_clear_spendings, message.from_user.id)
             tx = display_spending_summary(message=message)
             del user_statuses[message.chat.id]
             bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
         except Exception as e:
-            print(f"Error: in spendings {e}")
+            txx = f"Error: in spendings {e}"
             tx = 'Invalid data'
+            tx += txx
             bot.send_message(message.chat.id, text=tx)
     elif user_status.startswith("selected_"):
         try:
