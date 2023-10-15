@@ -216,14 +216,11 @@ def run_schedule():
         time.sleep(1)
 
 try:
-    print("Starting bot...")
     t = threading.Thread(target=run_schedule)
-    print("Starting bot...2")
     t2 = threading.Thread(target=run_reminder_checker)
     t.start()
     t2.start()
     reminder_checker()
-    bot.polling(none_stop=True, interval=0, timeout=20)
-    print("Starting bot...3")
+    bot.polling()
 except Exception as er:
     print(f"Error in end: {er}")
