@@ -217,12 +217,8 @@ def run_schedule():
         time.sleep(1)
 
 try:
-    t = threading.Thread(target=run_schedule)
-    t2 = threading.Thread(target=run_reminder_checker)
     t3 = threading.Thread(target= bot.polling)
-    t.start()
     print('1')
-    t2.start()
     print('11')
     t3.start()
     print('11')
