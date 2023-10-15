@@ -219,6 +219,6 @@ try:
     t.start()
     t2.start()
     reminder_checker()
-    bot.polling(none_stop=True, interval=0, timeout=20)
+    bot.polling()
 except Exception as er:
     print(f"Error in end: {er}")
