@@ -91,9 +91,7 @@ def handle_user_message(message):
             del user_statuses[message.chat.id]
             bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
         except Exception as e:
-            txx = f"Error: in spendings {e}"
-            tx = 'Invalid data'
-            tx += txx
+            tx = f"Error: in spendings {e} Invalid data"
             bot.send_message(message.chat.id, text=tx)
     elif user_status.startswith("selected_"):
         try:
@@ -221,6 +219,6 @@ try:
     t.start()
     t2.start()
     reminder_checker()
-    bot.polling()
+    bot.polling(none_stop=True, interval=0, timeout=20)
 except Exception as er:
     print(f"Error in end: {er}")
