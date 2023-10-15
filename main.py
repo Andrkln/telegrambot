@@ -218,7 +218,10 @@ try:
     t2 = threading.Thread(target=run_reminder_checker)
     t3 = threading.Thread(target= bot.polling)
     t.start()
+    print('1')
     t2.start()
+    print('11')
     t3.start()
+    print('11')
 except Exception as er:
     print(f"Error in end: {er}")
