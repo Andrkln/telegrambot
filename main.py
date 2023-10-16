@@ -221,10 +221,9 @@ try:
     t = threading.Thread(target=run_schedule)
     t2 = threading.Thread(target=run_reminder_checker)
     t3.start()
-    print('1')
     t2.start()
-    print('11')
     t.start()
-    print('13')
+except requests.exceptions.ReadTimeout:
+    print("Request timed out. Retrying...")
 except Exception as er:
     print(f"Error in end: {er}")
