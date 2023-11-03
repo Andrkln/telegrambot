@@ -2,15 +2,14 @@ import schedule
 import datetime as dt
 from bot import bot
 from keyboards import get_keyboard
+import pytz
 
 
 jobs_dict = {}
 
 def now():
-    now = dt.datetime.now()
-    current_time = now.strftime("%d.%m.%Y %H:%M")
-    current_time = dt.datetime.strptime(current_time, '%d.%m.%Y %H:%M')
-    return current_time
+    timezone = pytz.timezone('Europe/Helsinki')
+    return dt.datetime.now(timezone)
 
 def send_task(chat_id, event):
     bot.send_message(chat_id, text=event)

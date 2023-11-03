@@ -12,7 +12,8 @@ from reminder import reminders, set_reminder, reminder_checker
 from tasks import jobs_dict, make_task, send_task, now
 from bot import bot, format_datetime
 from keyboards import R_or_S, get_keyboard
-from spendings import process_spending, display_spending_summary, send_report_and_clear_spendings, spendings
+from database import cursor
+from spendings import process_spending, display_spending_summary, send_report_and_clear_spendings
 
 
 user_statuses = {}
@@ -32,12 +33,9 @@ def parse_datetime(user_input):
     
 @bot.message_handler(commands=['start', 'help',])
 def start(message):
-    print('111')
     if message.from_user.id == int(config('ME')):
-        print('1111')
         bot.send_message(message.chat.id, f'How are you doing {message.from_user.first_name}?',reply_markup=get_keyboard())
     else:
-        print('12')
         bot.send_message(message.chat.id, 'this is a private bot, not for you')
 
 
@@ -47,7 +45,13 @@ def options(c):
         user_statuses[c.message.chat.id] = 'awaiting_weather_city'
         bot.send_message(c.message.chat.id, text="Give me name of a city")
     elif c.data == 'spendings':
-        user_categories = spendings.get(c.from_user.id, {})
+        user_id = c.from_user.id
+        table_query = """
+        SELECT DISTINCT category FROM spendings
+        WHERE user_id = %s
+        """
+        cursor.execute(table_query, (user_id,))
+        user_categories = [row[0] for row in cursor.fetchall()]
         if user_categories:
             markup = types.InlineKeyboardMarkup()
             for category in user_categories.keys():
@@ -102,7 +106,18 @@ def handle_user_message(message):
             rmd = message.text.split()
             summ = int(rmd[0])
             event = ' '.join(rmd[1:])
-            spendings[message.from_user.id][category].append((summ, event, now()))
+
+            data = [
+            (message.from_user.id, category, summ, now(), event),
+                ]
+
+            table_query = """
+            INSERT INTO spendings (user_id, category, price, date, event)
+            VALUES (%s, %s, %s, %s, %s)
+                            """
+
+            cursor.executemany(table_query, data)
+
             msg = display_spending_summary(message)
             del user_statuses[message.chat.id]
             bot.send_message(message.chat.id, text=msg, reply_markup=get_keyboard())
@@ -217,7 +232,7 @@ def run_schedule():
         time.sleep(1)
 
 try:
-    t3 = threading.Thread(target= bot.polling)
+    t3 = threading.Thread(target=bot.infinity_polling, kwargs={'non_stop': True, 'long_polling_timeout': 5, 'timeout': 10})
     t = threading.Thread(target=run_schedule)
     t2 = threading.Thread(target=run_reminder_checker)
     t3.start()
@@ -225,5 +240,6 @@ try:
     t.start()
 except requests.exceptions.ReadTimeout:
     print("Request timed out. Retrying...")
+    continue
 except Exception as er:
     print(f"Error in end: {er}")
