@@ -240,6 +240,5 @@ try:
     t.start()
 except requests.exceptions.ReadTimeout:
     print("Request timed out. Retrying...")
-    continue
 except Exception as er:
     print(f"Error in end: {er}")
