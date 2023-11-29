@@ -1,6 +1,6 @@
 import telebot
 from telebot import types
-from datetime import datetime
+from datetime import datetime, timedelta
 from weather import get_weather
 import schedule
 from decouple import config
@@ -14,6 +14,11 @@ from bot import bot, format_datetime
 from keyboards import R_or_S, get_keyboard
 from database import cursor
 from spendings import process_spending, display_spending_summary, send_report_and_clear_spendings
+from apscheduler.schedulers.background import BackgroundScheduler
+
+
+scheduler = BackgroundScheduler()
+scheduler.start()
 
 
 user_statuses = {}
@@ -34,9 +39,11 @@ def parse_datetime(user_input):
 @bot.message_handler(commands=['start', 'help',])
 def start(message):
     if message.from_user.id == int(config('ME')):
-        bot.send_message(message.chat.id, f'How are you doing {message.from_user.first_name}?',reply_markup=get_keyboard())
+        sent_message = bot.send_message(message.chat.id, f'How are you doing {message.from_user.first_name}?', reply_markup=get_keyboard())
+        scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
     else:
-        bot.send_message(message.chat.id, 'this is a private bot, not for you')
+        bot.send_message(message.chat.id, 'This is a private bot, not for you')
+
 
 
 @bot.callback_query_handler(func=lambda c: c.data in ['weather', 'spendings', 'remind', 'GPT', 'paint'])
@@ -57,14 +64,16 @@ def options(c):
             for category in user_categories.keys():
                 button = types.InlineKeyboardButton(text=category, callback_data=f"category_{category}")
                 markup.add(button)
-            bot.send_message(c.message.chat.id, text='Select a category or enter a new one: \n example: cloth 20 shirts for home',  reply_markup=markup)
+            sent_message = bot.send_message(c.message.chat.id, text='Select a category or enter a new one: \n example: cloth 20 shirts for home',  reply_markup=markup)
             user_statuses[c.message.chat.id] = 'awaiting_spendings'
+            scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
         else:
             bot.send_message(c.message.chat.id, text="write something to to put in spends in format: category price object. \n example: cloth 20 shirts for home")
             user_statuses[c.message.chat.id] = 'awaiting_spendings'
     elif c.data == 'remind':
         bot.send_message(c.message.chat.id, text="What do you want")
-        bot.send_message(c.message.chat.id, 'Do you want to make shedule or reminder', reply_markup=R_or_S())
+        sent_message = bot.send_message(c.message.chat.id, 'Do you want to make shedule or reminder', reply_markup=R_or_S())
+        scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
     elif c.data == 'GPT':
         bot.send_message(c.message.chat.id, text="Type your question")
         user_statuses[c.message.chat.id] = 'awaiting_gpt_question'
@@ -87,7 +96,8 @@ def handle_user_message(message):
             cweather = city['weather'][0]['main']
             rweather = f'weaher in city {rmd}: {cweather} temperature {temp}, feels like {feels_like}'
             del user_statuses[message.chat.id]
-            bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
+            sent_message = bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
+            scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
     elif user_status == 'awaiting_spendings':
         try:
             user_id = message.from_user.id
@@ -96,7 +106,8 @@ def handle_user_message(message):
                 scheduled_reports[user_id] = schedule.every(30).days.at("12:00").do(send_report_and_clear_spendings, message.from_user.id)
             tx = display_spending_summary(message=message)
             del user_statuses[message.chat.id]
-            bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
+            sent_message = bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
+            scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
         except Exception as e:
             tx = f"Error: in spendings {e} Invalid data"
             bot.send_message(message.chat.id, text=tx)
@@ -120,7 +131,8 @@ def handle_user_message(message):
 
             msg = display_spending_summary(message)
             del user_statuses[message.chat.id]
-            bot.send_message(message.chat.id, text=msg, reply_markup=get_keyboard())
+            sent_message = bot.send_message(message.chat.id, text=msg, reply_markup=get_keyboard())
+            scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
         except:
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
@@ -136,19 +148,21 @@ def handle_user_message(message):
             stop=['"""'],
         )
         del user_statuses[message.chat.id]
-        bot.send_message(message.chat.id, f'{response["choices"][0]["text"]}', parse_mode="None", reply_markup=get_keyboard())
+        sent_message = bot.send_message(message.chat.id, f'{response["choices"][0]["text"]}', parse_mode="None", reply_markup=get_keyboard())
+        scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
     elif user_status == 'awaiting_paint_description':
         dalle = DallE()
         image = dalle.to_image(message.text)
         del user_statuses[message.chat.id]
         bot.send_message(message.chat.id, text=f'generating')
-        bot.send_photo(message.chat.id, image, reply_markup=get_keyboard())
+        sent_message = bot.send_photo(message.chat.id, image, reply_markup=get_keyboard())
+        scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
     elif user_status == 'make shedule':
         a = message
         make_task(a)
     elif user_status == 'make reminder':
         ab = message
-        set_reminder(ab, get_keyboard=get_keyboard)
+        set_reminder(ab, get_keyboard=get_keyboard())
 
 
 @bot.callback_query_handler(func=lambda c: c.data in ['Schedule', 'Reminder'])
@@ -160,8 +174,10 @@ def schedule_or_reminder_callback(c):
         if c.from_user.id not in jobs_dict:
             jobs_dict[c.from_user.id] = []
         else:
-            bot.send_message(c.message.chat.id, 'your shedule', reply_markup=show_tasks(jobs_dict, c.from_user.id))
-        bot.send_message(c.message.chat.id, 'or something else', reply_markup=get_keyboard())
+            sent_message = bot.send_message(c.message.chat.id, 'your shedule', reply_markup=show_tasks(jobs_dict, c.from_user.id))
+            scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
+        sent_message = bot.send_message(c.message.chat.id, 'or something else', reply_markup=get_keyboard())
+        scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, sent_message.message_id])
     elif c.data == 'Reminder':
         user_statuses[c.message.chat.id] = 'make reminder'
         bot.send_message(c.message.chat.id, 'Write your reminder in the format: 13.09 10:20 Have breakfast')
@@ -174,6 +190,7 @@ def delete_task_callback(c):
     bot.edit_message_text(chat_id=c.message.chat.id, message_id=c.message.message_id, text="Choose another action or task.",)
     msg = bot.send_message(c.message.chat.id, text='go to start', reply_markup=get_keyboard())
     bot.register_next_step_handler(msg, start)
+    scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, msg.message_id])
 
 @bot.callback_query_handler(func=lambda c: 'delete_reminder_' in c.data)
 def delete_reminder_callback(c):
@@ -183,6 +200,7 @@ def delete_reminder_callback(c):
     bot.edit_message_text(chat_id=c.message.chat.id, message_id=c.message.message_id, text="Choose another action or reminder.",)
     msg = bot.send_message(c.message.chat.id, text='go to start', reply_markup=get_keyboard())
     bot.register_next_step_handler(msg, start)
+    scheduler.add_job(delete_message, 'date', run_date=datetime.now() + timedelta(seconds=120), args=[message.chat.id, msg.message_id])
 
 @bot.callback_query_handler(func=lambda c: c.data in [' delete Schedule', ' delete Reminder'])
 def show_tasks(task, id):
@@ -231,8 +249,16 @@ def run_schedule():
         schedule.run_pending()
         time.sleep(1)
 
+
+def delete_message(chat_id, message_id):
+    try:
+        bot.delete_message(chat_id=chat_id, message_id=message_id)
+    except Exception as e:
+        print(f"Error deleting message: {e}")
+
+
 try:
-    t3 = threading.Thread(target=bot.infinity_polling, kwargs={'non_stop': True, 'long_polling_timeout': 5, 'timeout': 10})
+    t3 = threading.Thread(target=bot.infinity_polling, kwargs={'long_polling_timeout': 5, 'timeout': 10})
     t = threading.Thread(target=run_schedule)
     t2 = threading.Thread(target=run_reminder_checker)
     t3.start()
