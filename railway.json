@@ -4,7 +4,7 @@
       "builder": "NIXPACKS"
     },
     "deploy": {
-      "command": "python main.py.py",
+      "command": "python main.py",
       "numReplicas": 1,
       "sleepApplication": false,
       "restartPolicyType": "ON_FAILURE",
