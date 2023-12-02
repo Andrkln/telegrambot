@@ -57,13 +57,11 @@ def options(c):
         user_categories = [row[0] for row in cursor.fetchall()]
         if user_categories:
             markup = types.InlineKeyboardMarkup()
-            for category in user_categories.keys():
+            for category in user_categories:
                 button = types.InlineKeyboardButton(text=category, callback_data=f"category_{category}")
                 markup.add(button)
             sent_message = bot.send_message(c.message.chat.id, text='Select a category or enter a new one: \n example: cloth 20 shirts for home',  reply_markup=markup)
             user_statuses[c.message.chat.id] = 'awaiting_spendings'
-            time.sleep(120)
-            bot.delete_message(chat_id=c.message.chat.id, message_id=sent_message.message_id)
         else:
             bot.send_message(c.message.chat.id, text="write something to to put in spends in format: category price object. \n example: cloth 20 shirts for home")
             user_statuses[c.message.chat.id] = 'awaiting_spendings'
@@ -95,8 +93,7 @@ def handle_user_message(message):
             rweather = f'weaher in city {rmd}: {cweather} temperature {temp}, feels like {feels_like}'
             del user_statuses[message.chat.id]
             sent_message = bot.send_message(message.chat.id, text=rweather, reply_markup=get_keyboard())
-            time.sleep(120)
-            bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+       
     elif user_status == 'awaiting_spendings':
         try:
             user_id = message.from_user.id
@@ -106,8 +103,7 @@ def handle_user_message(message):
             tx = display_spending_summary(message=message)
             del user_statuses[message.chat.id]
             sent_message = bot.send_message(message.chat.id, text=tx, reply_markup=get_keyboard())
-            time.sleep(120)
-            bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+       
         except Exception as e:
             tx = f"Error: in spendings {e} Invalid data"
             bot.send_message(message.chat.id, text=tx)
@@ -132,8 +128,7 @@ def handle_user_message(message):
             msg = display_spending_summary(message)
             del user_statuses[message.chat.id]
             sent_message = bot.send_message(message.chat.id, text=msg, reply_markup=get_keyboard())
-            time.sleep(120)
-            bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+       
         except:
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
@@ -178,8 +173,7 @@ def schedule_or_reminder_callback(c):
             jobs_dict[c.from_user.id] = []
         else:
             sent_message = bot.send_message(c.message.chat.id, 'your shedule', reply_markup=show_tasks(jobs_dict, c.from_user.id))
-            time.sleep(120)
-            bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
+       
         sent_message = bot.send_message(c.message.chat.id, 'or something else', reply_markup=get_keyboard())
         time.sleep(120)
         bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)

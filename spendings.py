@@ -29,7 +29,7 @@ def display_spending_summary(message):
 
     table_query = """
     
-    SELECT category price, date, event FROM spendings
+    SELECT category, price, date, event FROM spendings
     WHERE user_id = %s
     
     """
