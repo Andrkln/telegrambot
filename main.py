@@ -35,8 +35,6 @@ def parse_datetime(user_input):
 def start(message):
     if message.from_user.id == int(config('ME')):
         sent_message = bot.send_message(message.chat.id, f'How are you doing {message.from_user.first_name}?', reply_markup=get_keyboard())
-        time.sleep(120)
-        bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
     else:
         bot.send_message(message.chat.id, 'This is a private bot, not for you')
 
@@ -68,8 +66,6 @@ def options(c):
     elif c.data == 'remind':
         bot.send_message(c.message.chat.id, text="What do you want")
         sent_message = bot.send_message(c.message.chat.id, 'Do you want to make shedule or reminder', reply_markup=R_or_S())
-        time.sleep(120)
-        bot.delete_message(chat_id=c.message.chat.id, message_id=sent_message.message_id)
     elif c.data == 'GPT':
         bot.send_message(c.message.chat.id, text="Type your question")
         user_statuses[c.message.chat.id] = 'awaiting_gpt_question'
@@ -145,16 +141,12 @@ def handle_user_message(message):
         )
         del user_statuses[message.chat.id]
         sent_message = bot.send_message(message.chat.id, f'{response["choices"][0]["text"]}', parse_mode="None", reply_markup=get_keyboard())
-        time.sleep(120)
-        bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
     elif user_status == 'awaiting_paint_description':
         dalle = DallE()
         image = dalle.to_image(message.text)
         del user_statuses[message.chat.id]
         bot.send_message(message.chat.id, text=f'generating')
         sent_message = bot.send_photo(message.chat.id, image, reply_markup=get_keyboard())
-        time.sleep(120)
-        bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
     elif user_status == 'make shedule':
         a = message
         make_task(a)
@@ -175,8 +167,6 @@ def schedule_or_reminder_callback(c):
             sent_message = bot.send_message(c.message.chat.id, 'your shedule', reply_markup=show_tasks(jobs_dict, c.from_user.id))
        
         sent_message = bot.send_message(c.message.chat.id, 'or something else', reply_markup=get_keyboard())
-        time.sleep(120)
-        bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
     elif c.data == 'Reminder':
         user_statuses[c.message.chat.id] = 'make reminder'
         bot.send_message(c.message.chat.id, 'Write your reminder in the format: 13.09 10:20 Have breakfast')
@@ -189,8 +179,6 @@ def delete_task_callback(c):
     bot.edit_message_text(chat_id=c.message.chat.id, message_id=c.message.message_id, text="Choose another action or task.",)
     msg = bot.send_message(c.message.chat.id, text='go to start', reply_markup=get_keyboard())
     bot.register_next_step_handler(msg, start)
-    time.sleep(120)
-    bot.delete_message(chat_id=c.message.chat.id, message_id=msg.message_id)
 
 @bot.callback_query_handler(func=lambda c: 'delete_reminder_' in c.data)
 def delete_reminder_callback(c):
@@ -200,8 +188,6 @@ def delete_reminder_callback(c):
     bot.edit_message_text(chat_id=c.message.chat.id, message_id=c.message.message_id, text="Choose another action or reminder.",)
     msg = bot.send_message(c.message.chat.id, text='go to start', reply_markup=get_keyboard())
     bot.register_next_step_handler(msg, start)
-    time.sleep(120)
-    bot.delete_message(chat_id=c.message.chat.id, message_id=msg.message_id)
 
 @bot.callback_query_handler(func=lambda c: c.data in [' delete Schedule', ' delete Reminder'])
 def show_tasks(task, id):
