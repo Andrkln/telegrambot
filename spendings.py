@@ -1,6 +1,8 @@
 from tasks import now
 from bot import format_datetime
 from database import cursor
+from tasks import now
+from bot import bot
 
 
 def process_spending(message):
@@ -63,16 +65,43 @@ def display_spending_summary(message):
 
 
 def send_report_and_clear_spendings(user_id):
-    if user_id in spendings:
-        sm = sum(amount for cat_spendings in spendings[user_id].values() for amount, _, _ in cat_spendings)
+    year = now().year
+    month = now().month - 1 if now().month > 1 else 12
+    year = year if now().month > 1 else year - 1
 
-        formatted_spendings = ', '.join(f"{amount} on {desc} at {format_datetime(spend_date)}" 
-                                        for cat_spendings in spendings[user_id].values() 
-                                        for amount, desc, spend_date in cat_spendings)
+    start_date = f"{year}-{month:02d}-01"
+    end_date = f"{year}-{month+1:02d}-01" if month < 12 else f"{year+1}-01-01"
 
-        tx = f'You spent {sm}. Your spendings: {formatted_spendings}.'
-        tx = tx.replace('[', '').replace(']', '').replace("'", '')
-        txm = 'During this month ' + tx
+    table_query = """
+        SELECT category, price, date, event 
+        FROM spendings
+        WHERE user_id = %s AND date >= %s AND date < %s
+    """
 
-        bot.send_message(user_id, text=txm, reply_markup=get_keyboard())
-        del spendings[user_id]
+    cursor.execute(table_query, (user_id, start_date, end_date))
+    rows = cursor.fetchall()
+
+    if not rows:
+        bot.send_message(user_id, text="No spendings recorded for this month.")
+        return
+
+    spendings_by_category = {}
+    total_spent = 0
+
+    for category, price, date, event in rows:
+        total_spent += price
+        if category not in spendings_by_category:
+            spendings_by_category[category] = price
+        else:
+            spendings_by_category[category] += price
+
+    # Format spendings by category
+    category_spendings = ', '.join(f"{category} {amount}" for category, amount in spendings_by_category.items())
+
+    report_message = f'You spent {total_spent} in {year}-{month:02d}. Your spendings: {category_spendings}.'
+    bot.send_message(user_id, text=report_message)
+
+    # Optionally, clear spendings from the database if needed
+    # clear_query = "DELETE FROM spendings WHERE user_id = %s AND date >= %s AND date < %s"
+    # cursor.execute(clear_query, (user_id, start_date, end_date))
+

@@ -159,7 +159,7 @@ def handle_user_message(message):
 def schedule_or_reminder_callback(c):
     if c.data == 'Schedule':
         bot.send_message(c.message.chat.id, text="choose day and task in format: monday 10:20 have a breakfast",)
-        bot.send_message(c.message.chat.id, text="Available days are: monday, tuesday,  wednesday, thursday, friday, saturday, sunday, every_day, working_days, weekend",)
+        bot.send_message(c.message.chat.id, text="Available days are: monday, tuesday,  wednesday, thursday, friday, saturday, sunday, every day, working days, weekend",)
         user_statuses[c.message.chat.id] = 'make shedule'
         if c.from_user.id not in jobs_dict:
             jobs_dict[c.from_user.id] = []
