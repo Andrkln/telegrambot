@@ -234,7 +234,7 @@ def run_reminder_checker():
 def run_schedule():
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(60)
 
 
 def delete_message(chat_id, message_id):
@@ -242,7 +242,6 @@ def delete_message(chat_id, message_id):
         bot.delete_message(chat_id=chat_id, message_id=message_id)
     except Exception as e:
         print(f"Error deleting message: {e}")
-
 
 try:
     t3 = threading.Thread(target=bot.infinity_polling, kwargs={'long_polling_timeout': 5, 'timeout': 10})
