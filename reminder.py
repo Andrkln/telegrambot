@@ -30,6 +30,12 @@ def set_reminder(message, get_keyboard):
         bot.send_message(message.chat.id, text=f"Invalid data: {e}")
         return
 
+    if tdate < dt.datetime.now(timezone):
+            bot.send_message(message.chat.id, 
+            text="Cannot set a reminder for a past time.", 
+            reply_markup=get_keyboard())
+            return
+
     if message.from_user.id in reminders.keys():
         reminders[message.from_user.id].append((tdate, event))
     else:
