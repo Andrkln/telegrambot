@@ -18,6 +18,7 @@ from spendings import process_spending, display_spending_summary, send_report_an
 
 user_statuses = {}
 scheduled_reports = {}
+allowed_users = []
 
 
 
@@ -33,15 +34,31 @@ def parse_datetime(user_input):
     
 @bot.message_handler(commands=['start', 'help',])
 def start(message):
-    if message.from_user.id == int(config('ME')):
+    user = message.from_user.username
+    if message.from_user.id == int(config('ME')) or user in allowed_users:
         sent_message = bot.send_message(message.chat.id, 
         f'How are you doing {message.from_user.first_name}?', reply_markup=get_keyboard())
     else:
-        bot.send_message(message.chat.id, 'This is a private bot, not for you')
+        table_query = """
+
+        SELECT user_name FROM users
+        WHERE user_name = %s
+
+        """
+        cursor.execute(table_query, (user,))
+        rows = cursor.fetchall()
+        if str(rows[0][0]) == str(user):
+            sent_message = bot.send_message(message.chat.id, 
+            f'How are you doing {message.from_user.first_name}?', reply_markup=get_keyboard())
+            allowed_users.append(user)
+        else:
+            bot.send_message(message.chat.id, 'This is a private bot, not for you')
 
 
 
-@bot.callback_query_handler(func=lambda c: c.data in ['weather', 'spendings', 'remind', 'GPT', 'paint'])
+@bot.callback_query_handler(func=lambda c: c.data in [
+    'weather', 'spendings', 'remind', 'GPT', 'paint'
+    ])
 def options(c):
     if c.data == 'weather':
         user_statuses[c.message.chat.id] = 'awaiting_weather_city'
