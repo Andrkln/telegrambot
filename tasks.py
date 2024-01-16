@@ -21,7 +21,6 @@ def send_task(chat_id, event):
 
 def make_task(message):
     timezone = pytz.timezone('Europe/Helsinki')
-    print(timezone)
     day_regex = r'(monday|tuesday|wednesday|thursday|friday|saturday|sunday|every_day|everyday|working_days|weekend)'
     time_regex = r'(\d{1,2}):(\d{2})'
 
@@ -60,13 +59,13 @@ def make_task(message):
 
     now_in_timezone = dt.datetime.now(timezone)
 
-    print(now_in_timezone, '2')
 
     job_key = f"{message.from_user.id}_{now_in_timezone.strftime('%Y%m%d%H%M%S')}"
 
     job = scheduler.add_job(send_task, 
     trigger=CronTrigger(day_of_week=cron_day, 
-    hour=hour, minute=minute), 
+    hour=hour, minute=minute),
+    timezone=timezone, 
     args=[message.chat.id, event])
     
     user_jobs[job_key] = (job, event, day)
