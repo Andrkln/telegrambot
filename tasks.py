@@ -62,7 +62,8 @@ def make_task(message):
     job = scheduler.add_job(send_task, 
     trigger=CronTrigger(day_of_week=cron_day, 
     hour=hour, minute=minute),
-    timezone=now(), 
+    timezone=now(),
+    tzinfo=pytz.timezone('Europe/Helsinki'), 
     args=[message.chat.id, event])
     
     user_jobs[job_key] = (job, event, day)
