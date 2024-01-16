@@ -8,8 +8,6 @@ timezone = pytz.timezone('Europe/Helsinki')
 
 bot = telebot.TeleBot(config('BOT_TOKEN'))
 
-
-
 scheduler = BackgroundScheduler(timezone=timezone)
 scheduler.start()
 
