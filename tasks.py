@@ -10,7 +10,7 @@ import pytz
 
 jobs_dict = {}
 
-timezone = pytz.timezone('Europe/Helsinki')
+
 
 def now():
     timezone = pytz.timezone('Europe/Helsinki')
@@ -20,6 +20,8 @@ def send_task(chat_id, event):
     bot.send_message(chat_id, text=event)
 
 def make_task(message):
+    timezone = pytz.timezone('Europe/Helsinki')
+    print(timezone)
     day_regex = r'(monday|tuesday|wednesday|thursday|friday|saturday|sunday|every_day|everyday|working_days|weekend)'
     time_regex = r'(\d{1,2}):(\d{2})'
 
@@ -57,6 +59,8 @@ def make_task(message):
     cron_day = days.get(day, '*')
 
     now_in_timezone = dt.datetime.now(timezone)
+
+    print(now_in_timezone, '2')
 
     job_key = f"{message.from_user.id}_{now_in_timezone.strftime('%Y%m%d%H%M%S')}"
 
