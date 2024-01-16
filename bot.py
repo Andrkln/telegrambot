@@ -5,7 +5,7 @@ import datetime as dt
 
 bot = telebot.TeleBot(config('BOT_TOKEN'))
 
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(timezone="Europe/Helsinki")
 scheduler.start()
 
 
