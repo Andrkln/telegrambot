@@ -217,7 +217,6 @@ def schedule_or_reminder_callback(c):
 def show_tasks(c):
     keyboard = telebot.types.InlineKeyboardMarkup()
     user_id = c.from_user.id
-    print(c)
     if c.data == 'Schedule':
         if user_id in jobs_dict:
             for key, job_data in jobs_dict[user_id].items():
