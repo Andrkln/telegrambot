@@ -57,14 +57,18 @@ def make_task(message):
 
     now_in_timezone = now()
 
-    job_key = f"{message.from_user.id}_{now_in_timezone.strftime('%Y%m%d%H%M%S')}"
+    timezone = pytz.timezone('Europe/Helsinki')
 
+    job_key = f"{message.from_user.id}_{now_in_timezone.strftime('%Y%m%d%H%M%S')}"
+    
     job = scheduler.add_job(send_task, 
     trigger=CronTrigger(day_of_week=cron_day, 
-    hour=hour, minute=minute),
-    timezone=now(), 
-    args=[message.chat.id, event])
-    
+    hour=hour, minute=minute, 
+    timezone=timezone),
+    args=[message.chat.id, event], 
+    timezone=timezone)
+
+
     user_jobs[job_key] = (job, event, day)
     jobs_dict[user_id] = user_jobs
 
