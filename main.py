@@ -157,20 +157,16 @@ def handle_user_message(message):
             tx = 'Invalid data'
             bot.send_message(message.chat.id, text=tx)
     elif user_status == 'awaiting_gpt_question':
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f'"""\n{message.text}\n"""',
-            temperature=0,
-            max_tokens=2000,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0,
-            stop=['"""'],
-        )
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": message.text}]
+            )
         del user_statuses[message.chat.id]
-        sent_message = bot.send_message(message.chat.id, 
-        f'{response["choices"][0]["text"]}', parse_mode="None", 
-        reply_markup=get_keyboard())
+    
+        sent_message = response['choices'][0]['message']['content']
+
+        bot.send_message(chat_id=message.chat.id, text=sent_message, parse_mode="None")
+
     elif user_status == 'awaiting_paint_description':
         dalle = DallE()
         image = dalle.to_image(message.text)
