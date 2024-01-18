@@ -158,14 +158,17 @@ def handle_user_message(message):
             bot.send_message(message.chat.id, text=tx)
     elif user_status == 'awaiting_gpt_question':
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-3.5-turbo-0613",
             messages=[{"role": "user", "content": message.text}]
             )
         del user_statuses[message.chat.id]
     
         sent_message = response['choices'][0]['message']['content']
 
-        bot.send_message(chat_id=message.chat.id, text=sent_message, parse_mode="None")
+        bot.send_message(chat_id=message.chat.id, 
+        text=sent_message, 
+        parse_mode="None",
+        reply_markup=get_keyboard())
 
     elif user_status == 'awaiting_paint_description':
         dalle = DallE()
